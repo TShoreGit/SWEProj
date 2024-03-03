@@ -1,4 +1,5 @@
-from enum import Enum
+import random
+random.seed(52)
 class World_map:
     def __init__(self, board_layout, country_name, continent_bonus, continent, borders):
         self.board_layout = board_layout  # array
@@ -15,20 +16,22 @@ class Player:
 
 class Card:
     def __init__(self, army_type, territory):
-        self.troop_type = army_type  # string
+        self.army_type = army_type  # string
         self.territory = territory  # string
 
 class Cards:
     def __init__(self):
-        self.territories = Territories
-        self.army_types = Army_types
+        self.army_types = Army_types()
+        self.territories = Territories()
         self.cards = []
-        for territory in self.territories:
-            for army_type in self.army_types:
-                self.cards.append(Card(army_type, territory))
+        for territory in self.territories.get_territories():
+            random_type = random.choice(self.army_types.get_types())
+            self.cards.append(Card(random_type, territory))
         self.cards.append(Card(Territory("Wild Card", "WC", ""), Army("Infantry/Cavalry/Artillery", None)))
         self.cards.append(Card(Territory("Wild Card", "WC", ""), Army("Infantry/Cavalry/Artillery", None)))
 
+    def get_cards(self):
+        return self.cards
 
 class Attack_dice:
     def __init__(self, num_one, num_two, num_three):
@@ -47,7 +50,7 @@ class Territory:
         self.code = code
         self.continent = continent
 
-class Territories(Enum):
+class Territories():
     def __init__(self):
         self.territories = [
             Territory("Afghanistan", "AF", "Asia"),
@@ -94,6 +97,12 @@ class Territories(Enum):
             Territory("Yemen", "YE", "Asia"),
             Territory("Zimbabwe", "ZW", "Africa")
         ]
+    def get_territories(self):
+        return self.territories
+
+    def get_territories_by_continent(self, continent):
+        return [territory for territory in self.territories if territory.continent == continent]
+
 
 class Army:
     def __init__(self, name, strength):
@@ -107,3 +116,6 @@ class Army_types:
         Army("Cavalry", 5),
         Army("Artillery", 10)
         ]
+
+    def get_types(self):
+        return self.types
