@@ -9,10 +9,11 @@ class World_map:
         self.borders = borders  # boolean
 
 class Player:
-    def __init__(self, troop_amount, cards_amount, territories):
+    def __init__(self, troop_amount, cards_amount, territories, colour):
         self.troop_amount = troop_amount  # int
         self.cards_amount = cards_amount  # int
         self.territories = territories  # array
+        self.colour = colour  # string
 
 class Card:
     def __init__(self, army_type, territory):
@@ -27,8 +28,8 @@ class Cards:
         for territory in self.territories.get_territories():
             random_type = random.choice(self.army_types.get_types())
             self.cards.append(Card(random_type, territory))
-        self.cards.append(Card(Territory("Wild Card", "WC", ""), Army("Infantry/Cavalry/Artillery", None)))
-        self.cards.append(Card(Territory("Wild Card", "WC", ""), Army("Infantry/Cavalry/Artillery", None)))
+        self.cards.append(Card(Army("Infantry/Cavalry/Artillery", None), Territory("Wild Card", "WC", "")))
+        self.cards.append(Card(Army("Infantry/Cavalry/Artillery", None), Territory("Wild Card", "WC", "")))
 
     def get_cards(self):
         return self.cards
@@ -37,12 +38,36 @@ class Attack_dice:
     def __init__(self, num_one, num_two, num_three):
         self.num_one = num_one  # int
         self.num_two = num_two  # int
-        self.num_three = num_three #int
+        self.num_three = num_three  # int
+
+    def roll_one_dice(self):
+        self.num_one = random.randint(1,8)
+        return self.num_one
+
+    def roll_two_dice(self):
+        self.num_one = random.randint(1, 8)
+        self.num_two = random.randint(1, 8)
+        return self.num_one, self.num_two
+
+    def roll_three_dice(self):
+        self.num_one = random.randint(1, 8)
+        self.num_two = random.randint(1, 8)
+        self.num_three = random.randint(1, 8)
+        return self.num_one, self.num_two, self.num_three
 
 class Defend_dice:
     def __init__(self, num_one, num_two):
         self.num_one = num_one  # int
         self.num_two = num_two  # int
+
+    def roll_one_dice(self):
+        self.num_one = random.randint(1,8)
+        return self.num_one
+
+    def roll_two_dice(self):
+        self.num_one = random.randint(1, 8)
+        self.num_two = random.randint(1, 8)
+        return self.num_one, self.num_two
 
 class Territory:
     def __init__(self, name, code, continent):
