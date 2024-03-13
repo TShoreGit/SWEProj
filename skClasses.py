@@ -128,6 +128,11 @@ class Territories():
     def get_territories_by_continent(self, continent):
         return [territory for territory in self.territories if territory.continent == continent]
 
+    def find_index_by_name(self, name):
+        for index, territory in enumerate(self.territories):
+            if territory.name.lower() == name.lower():
+                return index
+        return -1
 
 class Army:
     def __init__(self, name, strength):
