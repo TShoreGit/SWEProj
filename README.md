@@ -6,5 +6,4 @@ Politics,
 Economies,
 Diplomacy,
 Populations,
-Militaries + war effort,
-Populations
+Militaries + war effort
