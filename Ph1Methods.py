@@ -27,24 +27,25 @@ def player_alloc():  # Assigning base values to players
         dice_rolls.append(Attack_dice(0, 0, 0).roll_one_dice())
         players.append(Player(50 - (5 * amount_of_players), 0, [], colour_choice))
         # print(f"Player {i + 1}, Troop Amount: {players[i].troop_amount}, Colour: {players[i].colour}")
-    for i in range(amount_of_players):
-        print(f"Player {i + 1} rolls a {dice_rolls[i]}")
-    player_turn_index = dice_rolls.index(max(dice_rolls))
-    print(f"Player {player_turn_index + 1} places first")
-    pass_territory(player_turn_index, players)
+    [print(f"Player {i + 1} rolls a {dice_rolls[i]}") for i in range(amount_of_players)]
+    territories_init = Territories()
+    player_turns_index = sorted(range(amount_of_players), key=lambda x: -dice_rolls[x])
+    while territories_init.get_territories():
+        for player_index in player_turns_index:
+            print(f"Player {player_index + 1} places")
+            pass_territory(territories_init, player_index, players)
+    print("All territories have been chosen")
 
-def get_territories():
-    territories = Territories()
-    for territory in territories.get_territories():
+
+def get_territories(territories):
+    for territory in territories.get_territories()[:10]:
         print(f"Name: {territory.name}, Code: {territory.code}, Continent: {territory.continent}")
 
-def print_all_cards():
-    cards = Cards()
+def print_all_cards(cards):
     for card in cards.get_cards():
         print(f"Territory: {card.territory.name}, Army Type: {card.army_type.name} Strength: {card.army_type.strength}")
 
-def pass_territory(player_turn_index, players):
-    territories_init = Territories()
+def pass_territory(territories_init, player_turn_index, players):
     accepted = False
     while not accepted:
         territory_choice = input("Enter territory to place army on: ")
