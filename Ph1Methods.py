@@ -2,6 +2,8 @@ import sys
 import math
 
 from skClasses import *
+
+
 def player_select():  # Gathering and accepting amount of Players
     accepted = False
     while not accepted:
@@ -16,24 +18,23 @@ def player_select():  # Gathering and accepting amount of Players
     return amount_of_players
 
 
-def strengthen_territories(players, player_turns_index, strengthen_amount):
-    for player_turn_index in player_turns_index:
-        accepted = False
-        while not accepted:
-            territory_choice = input(
-                f"Press (0) for owned territories\nPlayer {player_turn_index + 1} enter territory to strengthen: ")
-            if territory_choice != "0":
-                territory_choice_index = players[player_turn_index].find_player_territory_index(territory_choice)
-                if territory_choice_index is not None:
-                    players[player_turn_index].territories[territory_choice_index].power += strengthen_amount
-                    players[player_turn_index].troop_amount -= strengthen_amount
-                    print(territory_choice, "strengthened to",
-                          players[player_turn_index].territories[territory_choice_index].power)
-                    accepted = True
-                else:
-                    print("Invalid territory")
+def strengthen_territories(players, player_index, strengthen_amount):
+    accepted = False
+    while not accepted:
+        territory_choice = input(
+            f"Press (0) for owned territories\nPlayer {player_index + 1} enter territory to strengthen: ")
+        if territory_choice != "0":
+            territory_choice_index = players[player_index].find_player_territory_index(territory_choice)
+            if territory_choice_index is not None:
+                players[player_index].territories[territory_choice_index].power += strengthen_amount
+                players[player_index].troop_amount -= strengthen_amount
+                print(territory_choice, "strengthened to",
+                      players[player_index].territories[territory_choice_index].power)
+                accepted = True
             else:
-                display_owned_territories(players, player_turns_index)
+                print("Invalid territory")
+        else:
+            display_owned_territories(players, player_index)
 
 
 def player_alloc():  # Assigning base values to players
@@ -50,7 +51,7 @@ def player_alloc():  # Assigning base values to players
                 colour_choice_accepted = True
             else:
                 print("Invalid colour chosen")
-        dice_rolls.append(Attack_dice(0, 0, 0).roll_one_dice())
+        dice_rolls.append(Attack_dice().roll_1_dice())
         players.append(Player(50 - (5 * amount_of_players), [], [], colour_choice))
         # print(f"Player {i + 1}, Troop Amount: {players[i].troop_amount}, Colour: {players[i].colour}")
     [print(f"Player {i + 1} rolls a {dice_rolls[i]}") for i in range(amount_of_players)]
@@ -63,7 +64,8 @@ def player_alloc():  # Assigning base values to players
                     print(f"Player {player_index + 1} places")
                     pass_territory(territories_init, player_index, players)
             print("All territories have been chosen")
-            strengthen_territories(players, player_turns_index)
+            for player_index in player_turns_index:
+                strengthen_territories(players, player_index, 1)
 
     # else:
     # while territories_init.get_territories() - 14:
@@ -81,7 +83,8 @@ def dev_mode():
                 print(f"Player {player_index + 1} places")
                 pass_territory(territories_init, player_index, players)
         print("All territories have been chosen")
-        strengthen_territories(players, player_turns_index, 1)
+        for player_index in player_turns_index:
+            strengthen_territories(players, player_index, 1)
     turns = 1
     while len(players) > 1:
         print(f"\n---TURN {turns}---")
@@ -105,7 +108,7 @@ def pass_territory(territories_init, player_turn_index, players):
     accepted = False
     while not accepted:
         territory_choice = input(
-            f"Press (0) for remaining territories\nPlayer {player_turn_index + 1} enter territory to place army on: ")
+            f"Press (0) for remaining territories\nPlayer {int(player_turn_index) + 1} enter territory to place army on: ")
         if territory_choice != "0":
             territory_index = territories_init.find_index_by_name(territory_choice)
             if territory_index >= 0:
@@ -143,6 +146,18 @@ def display_owned_territories(players, player_index):
         print(f"{territory.name}, Power: {territory.power}")
 
 
+def display_owned_and_bordered_territories(players, player_index):
+    print(f"Player {player_index + 1}, you currently occupy:")
+    for territory in players[player_index].territories:
+        print(f"{territory.name}, Power: {territory.power}")
+        print("Borders:")
+        for bordering_territory in territory.get_bordering_territories():
+            for player in players:
+                for found_territory in player.territories:
+                    if bordering_territory == found_territory.name:
+                        print(f"{bordering_territory}, Power: {found_territory.power}")
+
+
 def assign_cards(player, cards_init):
     player.cards.append(cards_init.cards.pop(0))
 
@@ -153,10 +168,115 @@ def player_turn(players, player_index):
     deploy_amount = 0
     while deploy_amount < players[player_index].troop_amount:
         deploy_amount = int(input("Enter amount to deploy: "))
-        if deploy_amount > players[player_index].troop_amount:
+        if deploy_amount > players[player_index].troop_amount or deploy_amount == 0:
             print("Invalid amount")
         else:
             strengthen_territories(players, player_index, deploy_amount)
+            deploy_amount = 0
+    accepted = False
+    while not accepted:
+        attack_dec = input(
+            f"Press (0) for owned territories and bordering territories\nPlayer {player_index + 1}, would you like to attack? (Y/N): ")
+        if attack_dec == "Y":
+            passed = False
+            while not passed:
+                territory_choice = input("Enter territory you wish to attack from: ")
+                if territory_choice not in players[player_index].get_all_territory_names() or \
+                        players[player_index].territories[
+                            players[player_index].find_player_territory_index(territory_choice)].power < 2:
+                    print("Invalid choice")
+                else:
+                    attack_choice = input("Enter territory you wish to attack: ")
+                    if check_bordering(players[player_index], attack_choice) is False:
+                        print("Invalid choice")
+                    else:
+                        print("Valid choice")
+                        player_defend_index, player_defend_territory_index = get_player_index_by_territory_name(players, attack_choice)
+                        player_attack_territory_index = get_player_index_by_territory_name(players, territory_choice)[1]
+                        passed2 = False
+                        while not passed2:
+                            attack_dice = Attack_dice()
+                            amount_of_attack_dice = int(input(f"Player {player_index + 1} enter amount of attack dice (1-3): "))
+                            attack_rolls = attack_dice.roll_dice(amount_of_attack_dice)
+                            if players[player_index].territories[player_attack_territory_index].power + 1 < amount_of_attack_dice or attack_rolls is False:
+                                print("Incorrect amount of dice (minimum 1 more army than amount of dice)")
+                            else:
+                                passed2 = True
+                        passed2 = False
+                        while not passed2:
+                            defend_dice = Defend_dice()
+                            amount_of_defend_dice = int(input(
+                                f"Player {player_defend_index + 1} enter amount of defend dice (1-2): "))
+                            defend_rolls = defend_dice.roll_dice(amount_of_defend_dice)
+                            if players[player_defend_index].territories[player_defend_territory_index].power < amount_of_defend_dice or defend_rolls is False:
+                                print("Incorrect amount of dice (minimum same number of armies)")
+                            else:
+                                passed2 = True
+                        print(f"Player {player_index + 1} rolls: {attack_rolls}")
+                        print(f"Player {player_defend_index + 1} rolls: {defend_rolls}")
+                        count = 0
+                        while min(len(attack_rolls), len(defend_rolls)) > 0 and count is not None:
+                            print(f"Player {player_index + 1}'s highest roll is: {max(attack_rolls)}")
+                            print(f"Player {player_defend_index + 1}'s highest is: {max(defend_rolls)}")
+                            if max(attack_rolls) > max(defend_rolls):
+                                army_fight(players, player_index, player_defend_index, player_defend_territory_index, count)
+                                check_win(players, player_index, player_defend_index, player_defend_territory_index, player_attack_territory_index, count)
+                            if max(attack_rolls) <= max(defend_rolls):
+                                army_fight(players, player_defend_index, player_index, player_attack_territory_index, count)
+                                count += 1
+                                check_win(players, player_defend_index, player_index, player_attack_territory_index, player_defend_territory_index, count)
+                            attack_rolls.remove(max(attack_rolls))
+                            defend_rolls.remove(max(defend_rolls))
+                        try_again = input("Battle finished would you like to attack again (Y/N): ")
+                        if try_again == "N":
+                            passed = True
+                        accepted = True
+        elif attack_dec == "N":
+            accepted = True
+        else:
+            display_owned_and_bordered_territories(players, player_index)
+
+def army_fight(players, player_win_index, player_lose_index, territory_index, count):
+    if count < 2:
+        players[player_lose_index].territories[territory_index].power -= 1
+        print(f"Player {player_win_index + 1} wins\n"
+              f"Player {player_lose_index + 1} loses an army at "
+              f"{players[player_lose_index].territories[territory_index].name}"
+              f" for a total of {players[player_lose_index].territories[territory_index].power}")
+    else:
+        count = None
+
+def check_win(players, player_index, player_defend_index, player_defend_territory_index, player_attack_territory_index, count):
+    if players[player_defend_index].territories[player_defend_territory_index].power == 0:
+        print(f"Player {player_defend_index + 1} has lost {players[player_defend_index].territories[player_defend_territory_index].name}")
+        amount_to_pass = int(input(f"Player {player_index + 1} enter amount to move to {players[player_defend_index].territories[player_defend_territory_index].name}"))
+        passed = False
+        while not passed:
+            if amount_to_pass >= players[player_index].territories[player_attack_territory_index].power:
+                print("Invalid amount (have to leave at least one army on all locations)")
+            else:
+                players[player_index].territories[player_attack_territory_index].power -= amount_to_pass
+                players[player_index].territories.append(players[player_defend_index].territories[player_defend_territory_index])
+                players[player_index].territories[-1].power += amount_to_pass
+                players[player_defend_index].territories.remove(players[player_defend_index].territories[player_defend_territory_index])
+                passed = True
+                count = None
+                print(f"{amount_to_pass} has been assigned to {players[player_index].territories[-1].name}")
+                print(f"{amount_to_pass} has been removed from {players[player_index].territories[player_attack_territory_index].name}")
+
+def check_bordering(player, name):
+    for territory in player.territories:
+        for bordering_territory in territory.bordering:
+            if name == bordering_territory:
+                return True
+    return False
+
+
+def get_player_index_by_territory_name(players, name):
+    for i in range(len(players)):
+        for x in range(len(players[i].territories)):
+            if players[i].territories[x].name == name:
+                return i, x
 
 
 player_alloc()
