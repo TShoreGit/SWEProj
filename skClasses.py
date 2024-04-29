@@ -19,6 +19,12 @@ class Player:
         self.territories = territories  # This should be a list of Territory instances
         self.colour = colour
 
+    def get_all_territory_names(self):
+        territory_names = []
+        for territory in self.territories:
+            territory_names.append(territory.name)
+        return territory_names
+
     def all_continents_check(self):
         continent_counts = {}
         for territory in self.territories:
@@ -96,21 +102,30 @@ class SecretMissionCards:
 
 
 class Attack_dice:
-    def __init__(self, num_one, num_two, num_three):
+    def __init__(self, num_one=None, num_two=None, num_three=None):
         self.num_one = num_one  # int
         self.num_two = num_two  # int
         self.num_three = num_three  # int
 
-    def roll_one_dice(self):
+    def roll_dice(self, number):
+        dice_rolls = []
+        if number > 3 or number < 1:
+            return False
+        else:
+            for i in range(number):
+                dice_rolls.append(random.randint(1, 8))
+            return dice_rolls
+
+    def roll_1_dice(self):
         self.num_one = random.randint(1, 8)
         return self.num_one
 
-    def roll_two_dice(self):
+    def roll_2_dice(self):
         self.num_one = random.randint(1, 8)
         self.num_two = random.randint(1, 8)
         return self.num_one, self.num_two
 
-    def roll_three_dice(self):
+    def roll_3_dice(self):
         self.num_one = random.randint(1, 8)
         self.num_two = random.randint(1, 8)
         self.num_three = random.randint(1, 8)
@@ -118,15 +133,24 @@ class Attack_dice:
 
 
 class Defend_dice:
-    def __init__(self, num_one, num_two):
+    def __init__(self, num_one=None, num_two=None):
         self.num_one = num_one  # int
         self.num_two = num_two  # int
 
-    def roll_one_dice(self):
+    def roll_dice(self, number):
+        dice_rolls = []
+        if number > 2 or number < 1:
+            return False
+        else:
+            for i in range(number):
+                dice_rolls.append(random.randint(1, 8))
+            return dice_rolls
+
+    def roll_1_dice(self):
         self.num_one = random.randint(1, 8)
         return self.num_one
 
-    def roll_two_dice(self):
+    def roll_2_dice(self):
         self.num_one = random.randint(1, 8)
         self.num_two = random.randint(1, 8)
         return self.num_one, self.num_two
@@ -139,7 +163,6 @@ class Territory:
         self.continent = continent
         self.power = power
         self.bordering = bordering if bordering is not None else []
-
 
     def get_bordering_territories(self):
         return self.bordering
@@ -275,7 +298,6 @@ class Territories():
     def get_territories(self):
         return self.territories
 
-
     def find_territory_by_name(self, name):
         for territory in self.territories:
             if territory.name.lower() == name.lower():
@@ -294,6 +316,7 @@ class Territories():
     def get_all_territories_names(self):
         for territory in self.territories:
             print(territory.name)
+
 
 class Dev_territories():
     def __init__(self):
@@ -339,7 +362,6 @@ class Dev_territories():
     def get_all_territories_names(self):
         for territory in self.territories:
             print(territory.name)
-
 
 
 class Army:
