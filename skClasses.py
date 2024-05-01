@@ -13,7 +13,8 @@ class World_map:
 
 
 class Player:
-    def __init__(self, troop_amount, cards, territories, colour):
+    def __init__(self, number, troop_amount, cards, territories, colour):
+        self.number = number
         self.troop_amount = troop_amount
         self.cards = cards
         self.territories = territories  # This should be a list of Territory instances
@@ -46,8 +47,8 @@ class Player:
             continent_counts[territory.continent] = continent_counts.get(territory.continent, 0) + 1
 
         bonus = 0
-        continent_requirements = {"North America": 1, "South America": 1, "Europe": 1, "Africa": 1, "Asia": 1,
-                                  "Australia": 1}
+        continent_requirements = {"North America": 2, "South America": 2, "Europe": 2, "Africa": 2, "Asia": 2,
+                                  "Australia": 2}
         continent_bonuses = {"North America": 5, "South America": 2, "Europe": 5, "Africa": 3, "Asia": 7,
                              "Australia": 2}
         for continent, count in continent_counts.items():
@@ -75,9 +76,9 @@ class Cards:
         self.cards = []
         for territory in self.territories.get_territories():
             random_type = random.choice(self.army_types.get_types())
-            self.cards.append(Card(random_type, territory))
-        self.cards.append(Card(Army("Infantry/Cavalry/Artillery", None), Territory("Wild Card", "WC", "")))
-        self.cards.append(Card(Army("Infantry/Cavalry/Artillery", None), Territory("Wild Card", "WC", "")))
+            self.cards.append(Card(random_type, territory.name))
+        self.cards.append(Card(Army("Infantry/Cavalry/Artillery", None), "Wild Card"))
+        self.cards.append(Card(Army("Infantry/Cavalry/Artillery", None), "Wild Card"))
         random.shuffle(self.cards)
 
     def get_cards(self):
@@ -322,16 +323,22 @@ class Dev_territories():
     def __init__(self):
         self.territories = [
             Territory("Alaska", "AK", "North America", 0),
+            Territory("Central America", "CA", "North America", 0),
             Territory("Argentina", "AR", "South America", 0),
-            Territory("Congo", "CG", "Africa", 0)
+            Territory("Brazil", "BR", "South America", 0),
+            Territory("Congo", "CG", "Africa", 0),
+            Territory("Egypt", "EG", "Africa", 0)
         ]
         self.setup_borders()
 
     def setup_borders(self):
         borders = {
-            "Alaska": ["Argentina", "Congo"],
+            "Alaska": ["Central America", "Brazil"],
+            "Central America": ["Alaska", "Egypt"],
             "Argentina": ["Congo"],
-            "Congo": ["Argentina", "Alaska"]}
+            "Brazil": ["Argentina", "Congo", "Egypt"],
+            "Congo": ["Argentina", "Alaska"],
+            "Egypt": ["Brazil", "Central America"]}
 
         for territory in self.territories:
             if territory.name in borders:
