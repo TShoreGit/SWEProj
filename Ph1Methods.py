@@ -3,13 +3,14 @@ import math
 
 from skClasses import *
 
+traded_in_cards_amount = 0
 out = []
 
 
 def player_select():
     while True:
         try:
-            amount_of_players = int(input("Enter amount of players (2-6): "))
+            amount_of_players = int(input("Enter (9) for dev mode\nEnter amount of players (2-6): "))
             if amount_of_players == 9:
                 dev_mode()
                 sys.exit(0)
@@ -39,12 +40,12 @@ def strengthen_territories(player, strengthen_amount):
             display_owned_territories(player)
 
 
-def player_alloc():
+def main():
     players = []
     dice_rolls = []
     amount_of_players = player_select()
     colours = ["Red", "Green", "Yellow", "Purple", "Orange", "Blue"]
-    # Collect dice rolls and player color choice
+    colours_static = ["Red", "Green", "Yellow", "Purple", "Orange", "Blue"]
     for i in range(amount_of_players):
         colour_choice = input(f"Player {i + 1} choose your colour from {str(colours)[1:-1]}: ")
         while colour_choice not in colours:
@@ -55,15 +56,13 @@ def player_alloc():
         roll = dice.roll_1_dice()
         dice_rolls.append(roll)
         print(f"Player {i + 1} rolls a {roll}")
-    # Sorting players by dice rolls in descending order and creating player instances
     sorted_player_indices = sorted(range(amount_of_players), key=lambda x: -dice_rolls[x])
     for index in sorted_player_indices:
-        players.append(Player(index + 1, 50 - (5 * amount_of_players), [], [], colours[index]))
-    # Rest of the function, perhaps involving territory allocation
+        players.append(Player(index + 1, 50 - (5 * amount_of_players), [], [], colours_static[index]))
     territories_init = Territories()
-    # Assuming a function to allocate territories or start the game
     player_turns_index = sorted(range(amount_of_players), key=lambda x: -dice_rolls[x])
     if amount_of_players != 2:
+        cards_init = Cards()
         while any(player.troop_amount > 0 for player in players):
             while territories_init.get_territories():
                 for player_index in player_turns_index:
@@ -72,9 +71,77 @@ def player_alloc():
             print("All territories have been chosen")
             for player_index in player_turns_index:
                 strengthen_territories(players[player_index], 1)
+        turns = 1
+        while len(players) > 1:
+            print(f"\n---TURN {turns}---")
+            for player in players:
+                if player in players:
+                    trade_cards(player)
+                    assign_armies(player)
+                    deploy_armies(player)
+                    winner = player_turn(players, player)
+                    if winner is not None:
+                        assign_cards(cards_init.cards, players, winner)
+                    fortify(player)
+            turns += 1
+        print(f"Congratulations Player {players[0].number} has won!")
+    else:
+        print("Two player is a WIP")
+        # two_player(territories_init, players, player_turns_index)
 
-    # else:
-    # while territories_init.get_territories() - 14:
+
+def two_player(territories_init, players, player_turns_index):
+    cards_init = Cards()
+    wild_cards = []
+    for card in cards_init.cards:
+        if card.territory == "Wild Card":
+            wild_cards.append(cards_init.cards.pop(cards_init.cards.index(card)))
+    print("Cards Assigning...")
+    first_set = cards_init.cards[:14]
+    second_set = cards_init.cards[14:28]
+    buffer_set = cards_init.cards[28:]
+    print(f"Player {players[player_turns_index[0]].number}, receives:")
+    for card in first_set:
+        for territory in territories_init.territories:
+            if card.territory == territory.name:
+                print(card.territory)
+                players[player_turns_index[0]].territories.append(
+                    territories_init.territories.pop(territories_init.territories.index(territory)))
+    print(f"Player {players[player_turns_index[1]].number}, receives:")
+    for card in second_set:
+        for territory in territories_init.territories:
+            if card.territory == territory.name:
+                print(card.territory)
+                players[player_turns_index[1]].territories.append(
+                    territories_init.territories.pop(territories_init.territories.index(territory)))
+    print("Buffer territories are: ")
+    for territory in territories_init.territories:
+        print(territory.name)
+    for i in range(2):
+        players[player_turns_index[i]].troop_amount -= 14
+    while players[player_turns_index[0]].troop_amount > 0 and players[player_turns_index[1]].troop_amount > 0:
+        if players[player_turns_index[0]].troop_amount > 0:
+            while True:
+                strengthen_amount = int(
+                    input(f"Player {players[player_turns_index[0]].number}, enter 1-2 armies to move"
+                          f" (Armies left: {players[player_turns_index[0]].troop_amount}: "))
+                if strengthen_amount > players[
+                    player_turns_index[0]].troop_amount or strengthen_amount > 2 or strengthen_amount < 1:
+                    print("Invalid amount")
+                else:
+                    strengthen_territories(players[player_turns_index[0]], strengthen_amount)
+                    break
+        if players[player_turns_index[1]].troop_amount > 0:
+            while True:
+                strengthen_amount = int(
+                    input(f"Player {players[player_turns_index[1]].number}, enter 1-2 armies to move"
+                          f" (Armies left: {players[player_turns_index[1]].troop_amount}: "))
+                if strengthen_amount > players[
+                    player_turns_index[1]].troop_amount or strengthen_amount > 2 or strengthen_amount < 1:
+                    print("Invalid amount")
+                else:
+                    strengthen_territories(players[player_turns_index[1]], strengthen_amount)
+                    break
 
 
 def dev_mode():
@@ -95,19 +162,57 @@ def dev_mode():
     turns = 1
     while len(players) > 1:
         print(f"\n---TURN {turns}---")
-        winners = set()
         for player in players:
             if player in players:
-                assign_armies(player)
+                trade_cards(player)
+                assign_armies_dev(player)
                 deploy_armies(player)
-                winners.add(player_turn(players, player))
+                winner = player_turn(players, player)
+                if winner is not None:
+                    assign_cards(cards_init.cards, players, winner)
                 fortify(player)
-                if None in winners:
-                    winners.remove(None)
-                winners.add(0)
-        assign_cards(cards_init.cards, players, winners)
         turns += 1
     print(f"Congratulations Player {players[0].number} has won!")
+
+
+def trade_cards(player):
+    global traded_in_cards_amount
+    card_set_types = {'Infantry': 0, 'Cavalry': 0, 'Artillery': 0, 'Wild': 0}
+    for card in player.cards:
+        if card.army_type.name in card_set_types:
+            card_set_types[card.army_type.name] += 1
+        else:
+            card_set_types['Wild'] += 1
+    has_set = any(value >= 3 for value in card_set_types.values()) or \
+              (card_set_types['Infantry'] > 0 and card_set_types['Cavalry'] > 0 and card_set_types['Artillery'] > 0) or \
+              (sum(card_set_types.values()) >= 3 and card_set_types['Wild'] > 0)
+    if has_set and len(player.cards) >= 5:
+        print(f"Player {player.number} must trade in cards.")
+        trading_cards = player.cards[:3]
+        player.cards = player.cards[3:]
+        extra_armies = 0
+        for card in trading_cards:
+            if any(territory.name == card.territory for territory in player.territories):
+                extra_armies += 2
+                for territory in player.territories:
+                    if territory.name == card.territory:
+                        territory.power += 2
+                        print(
+                            f"Added 2 extra armies to {territory.name} because the player holds a corresponding card.")
+                        break
+        armies = calculate_armies_for_set()
+        player.troop_amount += armies
+        traded_in_cards_amount += 1
+        print(f"Traded cards for {armies + extra_armies} armies (including extra for occupied territories).")
+
+
+def calculate_armies_for_set():
+    global traded_in_cards_amount
+    if traded_in_cards_amount < 6:
+        return (traded_in_cards_amount + 1) * 2 + 2
+    else:
+        return 15 + (traded_in_cards_amount - 5) * 5
+
 
 def fortify(player):
     while True:
@@ -119,10 +224,12 @@ def fortify(player):
                 if move_from_choice == "1":
                     print("Quitting...")
                     break
-                elif move_from_choice not in player.get_all_territory_names() or player.territories[player.get_all_territory_names().index(move_from_choice)].power < 2:
+                elif move_from_choice not in player.get_all_territory_names() or player.territories[
+                    player.get_all_territory_names().index(move_from_choice)].power < 2:
                     print("Invalid choice")
                 else:
-                    for border in player.territories[player.get_all_territory_names().index(move_from_choice)].bordering:
+                    for border in player.territories[
+                        player.get_all_territory_names().index(move_from_choice)].bordering:
                         if border in player.get_all_territory_names():
                             possible_choices.append(border)
                     if len(possible_choices) != 0:
@@ -130,20 +237,27 @@ def fortify(player):
                         for territory in possible_choices:
                             print(territory)
                         while True:
-                            move_choice = input("Enter territory (Press 1 to quit): ")
+                            move_choice = input("Enter territory to fortify (Press 1 to quit): ")
                             if move_choice == "1":
                                 print("Quitting...")
                                 break
                             elif move_choice in possible_choices:
                                 while True:
                                     amount_to_fortify_by = int(input("Enter amount to fortify by: "))
-                                    if amount_to_fortify_by > player.territories[player.get_all_territory_names().index(move_from_choice)].power or player.territories[player.get_all_territory_names().index(move_from_choice)].power - amount_to_fortify_by < 1:
-                                        print("Invalid amount (can't move more than occupied armies, or have to leave at least 1 army on a territory")
+                                    if amount_to_fortify_by > player.territories[
+                                        player.get_all_territory_names().index(move_from_choice)].power or \
+                                            player.territories[player.get_all_territory_names().index(
+                                                move_from_choice)].power - amount_to_fortify_by < 1:
+                                        print(
+                                            "Invalid amount (can't move more than occupied armies, or have to leave at least 1 army on a territory")
                                     else:
-                                        player.territories[player.get_all_territory_names().index(move_from_choice)].power -= amount_to_fortify_by
-                                        player.territories[player.get_all_territory_names().index(move_choice)].power += amount_to_fortify_by
-                                        print(f"Moved {amount_to_fortify_by} from {player.territories[player.get_all_territory_names().index(move_from_choice)].name} "
-                                              f"to {player.territories[player.get_all_territory_names().index(move_choice)].name}")
+                                        player.territories[player.get_all_territory_names().index(
+                                            move_from_choice)].power -= amount_to_fortify_by
+                                        player.territories[player.get_all_territory_names().index(
+                                            move_choice)].power += amount_to_fortify_by
+                                        print(
+                                            f"Moved {amount_to_fortify_by} from {player.territories[player.get_all_territory_names().index(move_from_choice)].name} "
+                                            f"to {player.territories[player.get_all_territory_names().index(move_choice)].name}")
                                         break
                                 break
                     else:
@@ -153,7 +267,6 @@ def fortify(player):
                 print(f"{territory.name}, Power: {territory.power}")
         else:
             break
-
 
 
 def check_if_out(players, player_index, winner_index):
@@ -177,14 +290,13 @@ def print_all_cards(cards):
 
 
 def pass_territory(territories_init, player_turn_index, players):
-    accepted = False
-    while not accepted:
+    while True:
         territory_choice = input(
             f"Press (0) for remaining territories\nPlayer {int(player_turn_index) + 1} enter territory to place army on: ")
         if territory_choice != "0":
             territory_index = territories_init.find_index_by_name(territory_choice)
             if territory_index >= 0:
-                accepted = True
+                break
             else:
                 print("Invalid territory")
         else:
@@ -192,20 +304,22 @@ def pass_territory(territories_init, player_turn_index, players):
     players[player_turn_index].territories.append(territories_init.territories[territory_index])
     players[player_turn_index].territories[-1].power += 1
     players[player_turn_index].troop_amount -= 1
-    # print(players[player_turn_index].territories[-1].name, "bordering territories are:")
-    # print(players[player_turn_index].territories[-1].bordering)
-    # print("TEST 1")
-    # print(territories_init.find_territory_by_name(territory_choice).get_bordering_territories())
-    # print("TEST 2")
-    # print(players[player_turn_index].territories[-1].get_bordering_territories())
     del territories_init.territories[territory_index]
     print(f"Player {player_turn_index + 1}'s territories are: " + "\n".join(
         [players[player_turn_index].territories[i].name for i in range(len(players[player_turn_index].territories))]))
 
 
+def assign_armies_dev(player):
+    armies_received = math.trunc(len(player.territories) / 3)
+    armies_received += player.all_continents_check()
+    armies_received = max(armies_received, 3)
+    print(f"Player {player.number}, receives {armies_received} armies")
+    player.troop_amount += armies_received
+
+
 def assign_armies(player):
-    armies_received = math.trunc(len(player.territories) / 3)  # Ensure minimum army count of 3
-    armies_received += player.all_continents_check_dev()  # Add bonus based on continents
+    armies_received = math.trunc(len(player.territories) / 3)
+    armies_received += player.all_continents_check_dev()
     armies_received = max(armies_received, 3)
     print(f"Player {player.number}, receives {armies_received} armies")
     player.troop_amount += armies_received
@@ -227,6 +341,8 @@ def display_owned_and_bordered_territories(players, player):
                 for found_territory in player.territories:
                     if bordering_territory == found_territory.name:
                         print(f"{bordering_territory}, Power: {found_territory.power}")
+        print("\n")
+
 
 def deploy_armies(player):
     display_owned_territories(player)
@@ -256,16 +372,21 @@ def player_turn(players, player):
                             player.find_player_territory_index(territory_choice)].power < 2:
                     print("Invalid choice")
                 else:
-                    attack_choice = input("Enter territory you wish to attack: ")
-                    if check_bordering(player, attack_choice) is False:
+                    attack_choice = input("Press (0) for bordering territories\nEnter territory you wish to attack: ")
+                    if attack_choice == "0":
+                        print(f"{territory_choice}, Borders: ")
+                        for border in player.territories[
+                            player.get_all_territory_names().index(territory_choice)].bordering:
+                            print(border)
+                    elif check_bordering(player,
+                                         attack_choice) is False or attack_choice in player.get_all_territory_names():
                         print("Invalid choice")
                     else:
                         print("Valid choice")
                         player_defend_index, player_defend_territory_index = get_player_index_by_territory_name(players,
                                                                                                                 attack_choice)
                         player_attack_territory_index = get_player_index_by_territory_name(players, territory_choice)[1]
-                        passed2 = False
-                        while not passed2:
+                        while True:
                             attack_dice = Attack_dice()
                             amount_of_attack_dice = int(
                                 input(f"Player {player.number} enter amount of attack dice (1-3): "))
@@ -274,9 +395,8 @@ def player_turn(players, player):
                                 player_attack_territory_index].power + 1 < amount_of_attack_dice or attack_rolls is False:
                                 print("Incorrect amount of dice (minimum 1 more army than amount of dice)")
                             else:
-                                passed2 = True
-                        passed2 = False
-                        while not passed2:
+                                break
+                        while True:
                             defend_dice = Defend_dice()
                             amount_of_defend_dice = int(input(
                                 f"Player {players[player_defend_index].number} enter amount of defend dice (1-2): "))
@@ -285,7 +405,7 @@ def player_turn(players, player):
                                 player_defend_territory_index].power < amount_of_defend_dice or defend_rolls is False:
                                 print("Incorrect amount of dice (minimum same number of armies)")
                             else:
-                                passed2 = True
+                                break
                         print(f"Player {player.number} rolls: {attack_rolls}")
                         print(f"Player {players[player_defend_index].number} rolls: {defend_rolls}")
                         count = 0
@@ -297,7 +417,8 @@ def player_turn(players, player):
                                            player_defend_territory_index,
                                            count)
                                 winner = check_win(players, players.index(player), player_defend_index,
-                                                   player_defend_territory_index, player_attack_territory_index, count, amount_of_attack_dice)
+                                                   player_defend_territory_index, player_attack_territory_index, count,
+                                                   amount_of_attack_dice)
                                 if winner is not None:
                                     check_if_out(players, player_defend_index, players.index(player))
                             if max(attack_rolls) <= max(defend_rolls):
@@ -328,10 +449,10 @@ def army_fight(players, player_win_index, player_lose_index, territory_index, co
     else:
         count = None
 
-def assign_cards(cards, players, winners):
-    for winner_index in winners:
-        print(f"Player {players[winner_index].number} has won in that turn and receives a RISK Card")
-        players[winner_index].cards.append(cards.pop(0))
+
+def assign_cards(cards, players, winner):
+    print(f"Player {players[winner].number} has won in that turn and receives a RISK Card")
+    players[winner].cards.append(cards.pop(0))
 
 
 def check_win(players, player_index, player_defend_index, player_defend_territory_index, player_attack_territory_index,
@@ -342,8 +463,9 @@ def check_win(players, player_index, player_defend_index, player_defend_territor
         passed = False
         while not passed:
             amount_to_pass = int(input(
-            f"Player {player_index + 1} enter amount to move to {players[player_defend_index].territories[player_defend_territory_index].name}: "))
-            if amount_to_pass >= players[player_index].territories[player_attack_territory_index].power or amount_to_pass < amount_of_attack_dice:
+                f"Player {player_index + 1} enter amount to move to {players[player_defend_index].territories[player_defend_territory_index].name}: "))
+            if amount_to_pass >= players[player_index].territories[
+                player_attack_territory_index].power or amount_to_pass < amount_of_attack_dice:
                 print("Invalid amount (have to leave at least one army on all locations"
                       " & amount can't be lower than amount of dice rolled)")
             else:
@@ -375,4 +497,4 @@ def get_player_index_by_territory_name(players, name):
                 return i, x
 
 
-player_alloc()
+main()
