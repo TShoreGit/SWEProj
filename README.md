@@ -10,3 +10,4 @@ Unfinished Elements:
 - Proper GUI
 - 2 Player Mode - WIP
 - Secret Mission
+- Capital Risk for a shorter game
