@@ -5,11 +5,11 @@ random.seed(52)
 
 class World_map:
     def __init__(self, board_layout, country_name, continent_bonus, continent, borders):
-        self.board_layout = board_layout  # array
-        self.country_name = country_name  # string
-        self.continent_bonus = continent_bonus  # int
-        self.continent = continent  # array
-        self.borders = borders  # boolean
+        self.board_layout = board_layout
+        self.country_name = country_name
+        self.continent_bonus = continent_bonus
+        self.continent = continent
+        self.borders = borders
 
 
 class Player:
@@ -17,7 +17,7 @@ class Player:
         self.number = number
         self.troop_amount = troop_amount
         self.cards = cards
-        self.territories = territories  # This should be a list of Territory instances
+        self.territories = territories
         self.colour = colour
 
     def get_all_territory_names(self):
@@ -65,8 +65,8 @@ class Player:
 
 class Card:
     def __init__(self, army_type, territory):
-        self.army_type = army_type  # string
-        self.territory = territory  # string
+        self.army_type = army_type
+        self.territory = territory
 
 
 class Cards:
@@ -104,9 +104,9 @@ class SecretMissionCards:
 
 class Attack_dice:
     def __init__(self, num_one=None, num_two=None, num_three=None):
-        self.num_one = num_one  # int
-        self.num_two = num_two  # int
-        self.num_three = num_three  # int
+        self.num_one = num_one
+        self.num_two = num_two
+        self.num_three = num_three
 
     def roll_dice(self, number):
         dice_rolls = []
@@ -135,8 +135,8 @@ class Attack_dice:
 
 class Defend_dice:
     def __init__(self, num_one=None, num_two=None):
-        self.num_one = num_one  # int
-        self.num_two = num_two  # int
+        self.num_one = num_one
+        self.num_two = num_two
 
     def roll_dice(self, number):
         dice_rolls = []
