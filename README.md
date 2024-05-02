@@ -5,6 +5,8 @@ battling to conquer the world. To win, you must launch daring attacks,
 defend yourself on all fronts, and sweep across vast continents with
 boldness and cunning.
 
+To run the game in current state - execute Ph1Methods.py
+
 Unfinished Elements:
  
 - Proper GUI
